@@ -243,15 +243,24 @@ def render_compras():
             (df['Tipo De Movimiento'] == 'Factura')
         ].copy()
 
-        compras_sem = df_merc.groupby(['Año','Semana'])['Monto'].sum().reset_index()
-        compras_sem.columns = ['Año','Semana','Compras']
+        # Agrupar compras por semana del año
+        compras_sem = df_merc.groupby('Semana')['Monto'].sum().reset_index()
+        compras_sem.columns = ['Semana','Compras']
 
-        # Ventas: agrupar por semana calculada
-        ventas_sem = df_v.groupby('Semana_calc')['Importe Acumulado'].sum().reset_index()
-        ventas_sem.columns = ['Semana','Ventas']
+        # Ventas: calcular semana si no existe
+        if 'Semana_calc' not in df_v.columns:
+            if 'Dia' in df_v.columns:
+                df_v['Semana_calc'] = ((pd.to_numeric(df_v['Dia'], errors='coerce') - 1) // 7 + 1).clip(1,5)
+            else:
+                st.warning("⚠️ No se puede calcular semana desde el archivo de ventas.")
+                archivo_vtas = None
 
-        # Merge por semana
-        ratio_df = compras_sem.merge(ventas_sem, on='Semana', how='inner')
+        if archivo_vtas is not None:
+            ventas_sem = df_v.groupby('Semana_calc')['Importe Acumulado'].sum().reset_index()
+            ventas_sem.columns = ['Semana','Ventas']
+
+            # Merge por semana
+                ratio_df = compras_sem.merge(ventas_sem, on='Semana', how='inner')
         ratio_df = ratio_df[ratio_df['Ventas'] > 0]
         ratio_df['Ratio %'] = (ratio_df['Compras'] / ratio_df['Ventas'] * 100).round(1)
         ratio_df['Semana Label'] = 'S' + ratio_df['Semana'].astype(str)
