@@ -440,6 +440,26 @@ with st.sidebar:
         )
 
         st.markdown("---")
+        st.markdown("**📅 FILTRO DE DÍAS**")
+
+        orden_dias = ['LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO','DOMINGO']
+        dias_disponibles = [d for d in orden_dias if d in df_raw['Dia Semana'].unique()]
+        dias_sel = st.multiselect(
+            "DÍA DE LA SEMANA",
+            dias_disponibles,
+            default=dias_disponibles,
+            help="Filtra por día de la semana"
+        )
+
+        dias_mes_disponibles = sorted(df_raw['Dia'].dropna().unique().astype(int).tolist())
+        dias_mes_sel = st.multiselect(
+            "DÍA DEL MES",
+            dias_mes_disponibles,
+            default=[],
+            help="Deja vacío para ver todos los días. Selecciona uno o más días específicos."
+        )
+
+        st.markdown("---")
         st.markdown("**🎯 METAS MANUALES**")
         st.caption("Define tú las metas para el benchmarking")
 
@@ -479,6 +499,14 @@ if familia_sel != "Todas las familias":
     df = df[df['Familia'] == familia_sel]
 if excluir_vend:
     df = df[~df['Nombre Vendedor'].isin(excluir_vend)]
+
+# Filtro día de la semana
+if dias_sel and len(dias_sel) < len(dias_disponibles):
+    df = df[df['Dia Semana'].isin(dias_sel)]
+
+# Filtro día del mes
+if dias_mes_sel:
+    df = df[df['Dia'].isin(dias_mes_sel)]
 
 if df.empty:
     st.warning("⚠️ No hay datos con los filtros seleccionados.")
