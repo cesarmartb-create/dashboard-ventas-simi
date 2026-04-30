@@ -287,6 +287,78 @@ def render_compras():
             )
             ratio_df = ratio_df.sort_values('Fecha Semana')
 
+        # ── DESGLOSE SEMANA SELECCIONADA ─────────────────
+        st.markdown("#### 🔍 Desglose por semana")
+        semanas_disponibles = ratio_df['Semana Label'].tolist()
+        semana_sel_detalle = st.selectbox(
+            "Selecciona una semana para ver el detalle:",
+            semanas_disponibles,
+            index=0
+        )
+
+        semana_num = ratio_df[ratio_df['Semana Label'] == semana_sel_detalle]['Semana'].values[0]
+        año_num    = ratio_df[ratio_df['Semana Label'] == semana_sel_detalle]['Año'].values[0]
+        ratio_sel  = ratio_df[ratio_df['Semana Label'] == semana_sel_detalle]['Ratio %'].values[0]
+
+        df_detalle = df_merc[
+            (df_merc['Semana'] == semana_num) &
+            (df_merc['Año']    == año_num)
+        ].copy()
+
+        color_header = "#ef4444" if ratio_sel > 100 else "#f59e0b" if ratio_sel > 75 else "#10b981"
+
+        st.markdown(f"""
+        <div style='background:{color_header}15;border-left:4px solid {color_header};
+                    border-radius:8px;padding:12px 16px;margin-bottom:16px'>
+            <b style='color:{color_header};font-size:16px'>{semana_sel_detalle} — Ratio: {ratio_sel:.1f}%</b><br>
+            <span style='color:#374151;font-size:13px'>
+            Total compras: $ {df_detalle['Monto'].sum():,.0f}
+            </span>
+        </div>
+        """, unsafe_allow_html=True)
+
+        d1, d2 = st.columns(2)
+
+        with d1:
+            st.markdown("**🏪 Por local**")
+            det_local = df_detalle.groupby('Local')['Monto'].sum().sort_values(ascending=False).reset_index()
+            det_local['Monto Fmt'] = det_local['Monto'].apply(lambda x: f"$ {x:,.0f}")
+            det_local['%'] = (det_local['Monto'] / det_local['Monto'].sum() * 100).round(1).astype(str) + "%"
+            st.dataframe(det_local[['Local','Monto Fmt','%']].rename(columns={'Monto Fmt':'Monto'}),
+                        use_container_width=True, hide_index=True)
+
+            fig_dl = px.bar(det_local, x='Monto', y='Local',
+                           orientation='h',
+                           title=f'Compras por local — {semana_sel_detalle}',
+                           color_discrete_sequence=[color_header])
+            fig_dl = card_chart(fig_dl)
+            fig_dl.update_layout(xaxis_title='$ Monto', yaxis_title='', showlegend=False)
+            st.plotly_chart(fig_dl, use_container_width=True)
+
+        with d2:
+            st.markdown("**🗂️ Por subcategoría**")
+            det_sub = df_detalle.groupby('Subcategoria')['Monto'].sum().sort_values(ascending=False).reset_index()
+            det_sub['Monto Fmt'] = det_sub['Monto'].apply(lambda x: f"$ {x:,.0f}")
+            det_sub['%'] = (det_sub['Monto'] / det_sub['Monto'].sum() * 100).round(1).astype(str) + "%"
+            st.dataframe(det_sub[['Subcategoria','Monto Fmt','%']].rename(columns={'Monto Fmt':'Monto'}),
+                        use_container_width=True, hide_index=True)
+
+            fig_ds = px.bar(det_sub, x='Monto', y='Subcategoria',
+                           orientation='h',
+                           title=f'Compras por subcategoría — {semana_sel_detalle}',
+                           color_discrete_sequence=[color_header])
+            fig_ds = card_chart(fig_ds)
+            fig_ds.update_layout(xaxis_title='$ Monto', yaxis_title='', showlegend=False)
+            st.plotly_chart(fig_ds, use_container_width=True)
+
+        # Tabla detalle completo
+        st.markdown("**📋 Detalle de facturas de esa semana**")
+        det_fact = df_detalle[['Fecha Documento','Local','Subcategoria','Factura','Monto']].copy()
+        det_fact['Monto'] = det_fact['Monto'].apply(lambda x: f"$ {x:,.0f}")
+        det_fact['Fecha Documento'] = det_fact['Fecha Documento'].dt.strftime('%d/%m/%Y')
+        st.dataframe(det_fact.sort_values('Fecha Documento'),
+                    use_container_width=True, hide_index=True)
+
             def color_ratio(r):
                 if r > 100: return ROJO
                 if r > 75:  return NARANJA
