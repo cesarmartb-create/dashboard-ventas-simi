@@ -70,16 +70,12 @@ def render_compras():
         elif "fact_file" in st.session_state:
             archivo_fact = st.session_state["fact_file"]
 
-        archivo_vtas = st.file_uploader(
-            "Ventas (.xlsx)",
-            type=["xlsx"],
-            key="uploader_vtas",
-            help="Sube tu archivo de ventas QlickView para comparar"
-        )
+        # Ventas se toman automáticamente desde la página de Ventas
+        archivo_vtas = st.session_state.get("vtas_file", None)
         if archivo_vtas:
-            st.session_state["vtas_file"] = archivo_vtas
-        elif "vtas_file" in st.session_state:
-            archivo_vtas = st.session_state["vtas_file"]
+            st.caption("✅ Ventas cargadas desde página Ventas")
+        else:
+            st.caption("⚠️ Carga primero los archivos en 📈 Ventas para ver ratio Compra/Venta")
 
     if not archivo_fact:
         st.info("👈 Carga el archivo de facturación desde el panel izquierdo para comenzar.")

@@ -401,6 +401,8 @@ with st.sidebar:
     excluir_vend  = []
 
     if archivos:
+        # Guardar en session_state para que Compras pueda usarlos
+        st.session_state["vtas_file"] = archivos[0]
         with st.spinner("Procesando..."):
             df_raw = combinar_sin_duplicados(archivos)
 
