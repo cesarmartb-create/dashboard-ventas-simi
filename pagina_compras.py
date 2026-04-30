@@ -177,7 +177,7 @@ def render_compras():
         pivot_tabla.loc['📊 TOTAL GENERAL'] = pivot_tabla.sum()
 
         # Formatear como $ 
-        pivot_fmt = pivot_tabla.applymap(lambda x: f"$ {x:,.0f}" if x > 0 else "—")
+        pivot_fmt = pivot_tabla.map(lambda x: f"$ {x:,.0f}" if x > 0 else "—")
 
         st.dataframe(pivot_fmt, use_container_width=True)
 
