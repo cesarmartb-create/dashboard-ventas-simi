@@ -367,16 +367,86 @@ def render_compras():
         fig_cat.update_layout(legend=dict(font=dict(size=10)))
         st.plotly_chart(fig_cat, use_container_width=True)
 
-    # ── SUBCATEGORÍAS ─────────────────────────────────────
-    st.markdown("### 📋 Top subcategorías")
-    por_sub = df[df['Tipo De Movimiento']=='Factura'].groupby(
-        'Subcategoria')['Monto'].sum().nlargest(15).sort_values(ascending=True).reset_index()
-    fig_sub = px.bar(por_sub, x='Monto', y='Subcategoria',
-                     orientation='h', title='Top 15 subcategorías',
-                     color_discrete_sequence=[VERDE])
-    fig_sub = card_chart(fig_sub)
-    fig_sub.update_layout(xaxis_title='$ Monto', yaxis_title='', showlegend=False)
-    st.plotly_chart(fig_sub, use_container_width=True)
+    # ── MERCADERÍA vs OTRAS CATEGORÍAS ──────────────────────
+    st.markdown("### 📋 Análisis por categoría")
+    st.caption("Mercadería separada del resto para mejor visualización")
+
+    df_fact_cat = df[df['Tipo De Movimiento']=='Factura']
+
+    tab1, tab2 = st.tabs(["📦 Mercadería", "🗂️ Otras categorías"])
+
+    with tab1:
+        df_merc_cat = df_fact_cat[df_fact_cat['Categoría'] == 'Mercadería']
+        col_m1, col_m2 = st.columns(2)
+
+        with col_m1:
+            # Por local
+            merc_local = df_merc_cat.groupby('Local')['Monto'].sum().sort_values(ascending=True).reset_index()
+            fig_ml = px.bar(merc_local, x='Monto', y='Local',
+                           orientation='h', title='Mercadería por local',
+                           color_discrete_sequence=[AZUL])
+            fig_ml = card_chart(fig_ml)
+            fig_ml.update_layout(xaxis_title='$ Monto', yaxis_title='', showlegend=False)
+            st.plotly_chart(fig_ml, use_container_width=True)
+
+        with col_m2:
+            # Por subcategoría mercadería
+            merc_sub = df_merc_cat.groupby('Subcategoria')['Monto'].sum().sort_values(ascending=True).reset_index()
+            fig_ms = px.bar(merc_sub, x='Monto', y='Subcategoria',
+                           orientation='h', title='Subcategorías Mercadería',
+                           color_discrete_sequence=[AZUL])
+            fig_ms = card_chart(fig_ms)
+            fig_ms.update_layout(xaxis_title='$ Monto', yaxis_title='', showlegend=False)
+            st.plotly_chart(fig_ms, use_container_width=True)
+
+        # Evolución mensual solo mercadería
+        merc_mes = df_merc_cat.copy()
+        merc_mes['Mes Num'] = merc_mes['Mes'].map(
+            {'enero':1,'febrero':2,'marzo':3,'abril':4,'mayo':5,'junio':6,
+             'julio':7,'agosto':8,'septiembre':9,'octubre':10,'noviembre':11,'diciembre':12}
+        )
+        merc_evol = merc_mes.groupby(['Año','Mes','Mes Num'])['Monto'].sum().reset_index().sort_values(['Año','Mes Num'])
+        merc_evol['Label'] = merc_evol['Mes'].str.capitalize() + ' ' + merc_evol['Año'].astype(str)
+        fig_mevol = px.bar(merc_evol, x='Label', y='Monto',
+                          title='Evolución mensual Mercadería',
+                          color_discrete_sequence=[AZUL], text_auto='.2s')
+        fig_mevol = card_chart(fig_mevol)
+        fig_mevol.update_layout(xaxis_title='', yaxis_title='$ Monto', showlegend=False)
+        st.plotly_chart(fig_mevol, use_container_width=True)
+
+    with tab2:
+        df_otras = df_fact_cat[df_fact_cat['Categoría'] != 'Mercadería']
+
+        col_o1, col_o2 = st.columns(2)
+
+        with col_o1:
+            # Por categoría sin mercadería
+            otras_cat = df_otras.groupby('Categoría')['Monto'].sum().sort_values(ascending=True).reset_index()
+            fig_oc = px.bar(otras_cat, x='Monto', y='Categoría',
+                           orientation='h', title='Otras categorías',
+                           color_discrete_sequence=[VERDE])
+            fig_oc = card_chart(fig_oc)
+            fig_oc.update_layout(xaxis_title='$ Monto', yaxis_title='', showlegend=False)
+            st.plotly_chart(fig_oc, use_container_width=True)
+
+        with col_o2:
+            # Por subcategoría sin mercadería
+            otras_sub = df_otras.groupby('Subcategoria')['Monto'].sum().nlargest(15).sort_values(ascending=True).reset_index()
+            fig_os = px.bar(otras_sub, x='Monto', y='Subcategoria',
+                           orientation='h', title='Top subcategorías (sin Mercadería)',
+                           color_discrete_sequence=[VERDE])
+            fig_os = card_chart(fig_os)
+            fig_os.update_layout(xaxis_title='$ Monto', yaxis_title='', showlegend=False)
+            st.plotly_chart(fig_os, use_container_width=True)
+
+        # Por local sin mercadería
+        otras_local = df_otras.groupby(['Local','Categoría'])['Monto'].sum().reset_index()
+        fig_ol = px.bar(otras_local, x='Local', y='Monto', color='Categoría',
+                       title='Otras categorías por local',
+                       color_discrete_sequence=AZUL_LISTA)
+        fig_ol = card_chart(fig_ol)
+        fig_ol.update_layout(xaxis_title='', yaxis_title='$ Monto')
+        st.plotly_chart(fig_ol, use_container_width=True)
 
     # ── ESTADO DE PAGOS ───────────────────────────────────
     st.markdown("### 💳 Estado de pagos")
