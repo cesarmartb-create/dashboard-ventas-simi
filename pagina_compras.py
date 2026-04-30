@@ -256,14 +256,36 @@ def render_compras():
                 archivo_vtas = None
 
         if archivo_vtas is not None:
-            ventas_sem = df_v.groupby('Semana_calc')['Importe Acumulado'].sum().reset_index()
-            ventas_sem.columns = ['Semana','Ventas']
+            # Construir fecha completa desde Periodo + Dia
+            df_v['Año_v']  = df_v['Periodo'].astype(str).str[:4].astype(int)
+            df_v['Mes_v']  = df_v['Periodo'].astype(str).str[4:6].astype(int)
+            df_v['Dia_v']  = pd.to_numeric(df_v['Dia'], errors='coerce').fillna(1).astype(int)
+            df_v['Fecha_v'] = pd.to_datetime(dict(
+                year=df_v['Año_v'], month=df_v['Mes_v'], day=df_v['Dia_v']
+            ), errors='coerce')
+            # Calcular semana del año (igual que facturación)
+            df_v['Semana_año'] = df_v['Fecha_v'].dt.isocalendar().week.astype(int)
+            df_v['Año_sem']    = df_v['Fecha_v'].dt.isocalendar().year.astype(int)
 
-            # Merge por semana
-            ratio_df = compras_sem.merge(ventas_sem, on='Semana', how='inner')
+            ventas_sem = df_v.groupby(['Año_sem','Semana_año'])['Importe Acumulado'].sum().reset_index()
+            ventas_sem.columns = ['Año','Semana','Ventas']
+
+            # Compras también por año+semana
+            compras_sem2 = df_merc.groupby(['Año','Semana'])['Monto'].sum().reset_index()
+            compras_sem2.columns = ['Año','Semana','Compras']
+
+            # Merge por año+semana
+            ratio_df = compras_sem2.merge(ventas_sem, on=['Año','Semana'], how='inner')
             ratio_df = ratio_df[ratio_df['Ventas'] > 0]
             ratio_df['Ratio %'] = (ratio_df['Compras'] / ratio_df['Ventas'] * 100).round(1)
-            ratio_df['Semana Label'] = 'S' + ratio_df['Semana'].astype(str)
+            # Calcular fecha de inicio de cada semana para el label
+            ratio_df['Fecha Semana'] = ratio_df.apply(
+                lambda r: pd.Timestamp.fromisocalendar(int(r['Año']), int(r['Semana']), 1), axis=1
+            )
+            ratio_df['Semana Label'] = ratio_df.apply(
+                lambda r: f"S{int(r['Semana'])} ({r['Fecha Semana'].strftime('%d/%m')})", axis=1
+            )
+            ratio_df = ratio_df.sort_values('Fecha Semana')
 
             def color_ratio(r):
                 if r > 100: return ROJO
