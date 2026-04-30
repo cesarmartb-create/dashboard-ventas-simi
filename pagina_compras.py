@@ -159,44 +159,63 @@ def render_compras():
 
     if not df_prox.empty:
         df_prox['Días restantes'] = (df_prox['Fecha Vencimiento'] - hoy).dt.days
-        df_prox['Semana vto.']    = df_prox['Días restantes'].apply(
-            lambda x: f"Esta semana" if x <= 7 else
-                      f"Semana {(x//7)+1}"
+
+        # Calcular viernes siguiente al vencimiento (día de pago real)
+        def viernes_siguiente(fecha):
+            if pd.isna(fecha):
+                return None
+            dias_hasta_viernes = (4 - fecha.weekday()) % 7
+            if dias_hasta_viernes == 0:
+                dias_hasta_viernes = 7  # Si vence viernes, paga el viernes siguiente
+            return fecha + timedelta(days=dias_hasta_viernes)
+
+        df_prox['Fecha Pago'] = df_prox['Fecha Vencimiento'].apply(viernes_siguiente)
+        df_prox['Semana Pago'] = df_prox['Fecha Pago'].apply(
+            lambda x: x.strftime("Viernes %d/%m/%Y") if pd.notna(x) else "—"
         )
 
-        # Tabla pivoteada: filas=semana, columnas=empresa, total
-        pivot = df_prox.groupby(['Semana vto.','Empresa'])['Monto'].sum().reset_index()
-        pivot_tabla = pivot.pivot(index='Semana vto.', columns='Empresa', values='Monto').fillna(0)
+        # Tabla pivoteada: filas=viernes de pago, columnas=empresa, total
+        pivot = df_prox.groupby(['Semana Pago','Fecha Pago','Empresa'])['Monto'].sum().reset_index()
+        pivot_tabla = pivot.pivot_table(
+            index=['Fecha Pago','Semana Pago'],
+            columns='Empresa',
+            values='Monto',
+            aggfunc='sum'
+        ).fillna(0)
         pivot_tabla['💰 TOTAL'] = pivot_tabla.sum(axis=1)
+        pivot_tabla = pivot_tabla.sort_index(level='Fecha Pago')
 
-        # Orden semanas
-        orden_sem = ['Esta semana','Semana 2','Semana 3','Semana 4','Semana 5','Semana 6','Semana 7']
-        pivot_tabla = pivot_tabla.reindex([s for s in orden_sem if s in pivot_tabla.index])
+        # Fila TOTAL GENERAL
+        total_row = pivot_tabla.sum()
+        total_row.name = (pd.Timestamp('2099-01-01'), '📊 TOTAL GENERAL')
+        pivot_tabla = pd.concat([pivot_tabla, total_row.to_frame().T])
 
-        # Fila TOTAL
-        pivot_tabla.loc['📊 TOTAL GENERAL'] = pivot_tabla.sum()
+        # Mostrar solo la etiqueta de semana como índice
+        pivot_tabla.index = [idx[1] for idx in pivot_tabla.index]
 
-        # Formatear como $ 
-        pivot_fmt = pivot_tabla.map(lambda x: f"$ {x:,.0f}" if x > 0 else "—")
-
+        # Formatear como $
+        pivot_fmt = pivot_tabla.map(lambda x: f"$ {x:,.0f}" if isinstance(x, (int,float)) and x > 0 else "—")
         st.dataframe(pivot_fmt, use_container_width=True)
 
         # Gráfico usando pivot sin formatear
         pivot_grafico = pivot.copy()
         orden_sem = ['Esta semana','Semana 2','Semana 3','Semana 4',
                      'Semana 5','Semana 6','Semana 7']
-        pivot_grafico['Semana vto.'] = pd.Categorical(
-            pivot_grafico['Semana vto.'], categories=orden_sem, ordered=True
-        )
-        pivot_grafico = pivot_grafico.sort_values('Semana vto.')
+        # Gráfico por viernes de pago
+        pivot_grafico = df_prox.groupby(['Semana Pago','Empresa'])['Monto'].sum().reset_index()
+        pivot_grafico = pivot_grafico.merge(
+            df_prox[['Semana Pago','Fecha Pago']].drop_duplicates(),
+            on='Semana Pago'
+        ).sort_values('Fecha Pago')
 
         fig_vto = px.bar(
-            pivot_grafico, x='Semana vto.', y='Monto', color='Empresa',
-            title='Vencimientos próximos 49 días por semana y empresa',
+            pivot_grafico, x='Semana Pago', y='Monto', color='Empresa',
+            title='Pagos por viernes — próximos 49 días',
             color_discrete_sequence=AZUL_LISTA
         )
         fig_vto = card_chart(fig_vto)
-        fig_vto.update_layout(xaxis_title='', yaxis_title='$ Monto')
+        fig_vto.update_layout(xaxis_title='Viernes de pago', yaxis_title='$ Monto',
+                              xaxis_tickangle=-20)
         st.plotly_chart(fig_vto, use_container_width=True)
     else:
         st.success("✅ No hay vencimientos en los próximos 49 días.")
