@@ -260,18 +260,18 @@ def render_compras():
             ventas_sem.columns = ['Semana','Ventas']
 
             # Merge por semana
-                ratio_df = compras_sem.merge(ventas_sem, on='Semana', how='inner')
-        ratio_df = ratio_df[ratio_df['Ventas'] > 0]
-        ratio_df['Ratio %'] = (ratio_df['Compras'] / ratio_df['Ventas'] * 100).round(1)
-        ratio_df['Semana Label'] = 'S' + ratio_df['Semana'].astype(str)
+            ratio_df = compras_sem.merge(ventas_sem, on='Semana', how='inner')
+            ratio_df = ratio_df[ratio_df['Ventas'] > 0]
+            ratio_df['Ratio %'] = (ratio_df['Compras'] / ratio_df['Ventas'] * 100).round(1)
+            ratio_df['Semana Label'] = 'S' + ratio_df['Semana'].astype(str)
 
-        def color_ratio(r):
-            if r > 100: return ROJO
-            if r > 75:  return NARANJA
-            if r >= 60: return VERDE
-            return AZUL
+            def color_ratio(r):
+                if r > 100: return ROJO
+                if r > 75:  return NARANJA
+                if r >= 60: return VERDE
+                return AZUL
 
-        ratio_df['Color'] = ratio_df['Ratio %'].apply(color_ratio)
+            ratio_df['Color'] = ratio_df['Ratio %'].apply(color_ratio)
 
         # KPIs ratio
         r1, r2, r3, r4 = st.columns(4)
