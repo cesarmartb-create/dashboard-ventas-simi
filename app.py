@@ -535,16 +535,14 @@ st.markdown("<br>", unsafe_allow_html=True)
 
 # ── KPIs FILA 2: Gestión + Botón imprimir ────────────────
 st.markdown("#### Indicadores de gestión")
-g1, g2, g3, g4 = st.columns([1, 1, 1, 1])
+g1, g2, g3 = st.columns(3)
 with g1:
     st.metric("🎫 Ticket promedio",      f"$ {ticket_prom:,.0f}")
 with g2:
     st.metric("🏅 % G8 s/ venta",    f"{pct_premio:.1f}%")
 with g3:
     st.metric("🛒 Artículos por ticket", f"{arts_ticket:.2f}")
-with g4:
-    st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
-    imprimir = st.button("🖨️ Imprimir informe", use_container_width=True, type="primary")
+imprimir = False
 
 st.markdown("---")
 
