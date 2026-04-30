@@ -352,13 +352,6 @@ def render_compras():
             st.plotly_chart(fig_ds, use_container_width=True)
 
         # Tabla detalle completo
-        st.markdown("**📋 Detalle de facturas de esa semana**")
-        det_fact = df_detalle[['Fecha Documento','Local','Subcategoria','Factura','Monto']].copy()
-        det_fact['Monto'] = det_fact['Monto'].apply(lambda x: f"$ {x:,.0f}")
-        det_fact['Fecha Documento'] = det_fact['Fecha Documento'].dt.strftime('%d/%m/%Y')
-        st.dataframe(det_fact.sort_values('Fecha Documento'),
-                    use_container_width=True, hide_index=True)
-
             def color_ratio(r):
                 if r > 100: return ROJO
                 if r > 75:  return NARANJA
@@ -366,6 +359,13 @@ def render_compras():
                 return AZUL
 
             ratio_df['Color'] = ratio_df['Ratio %'].apply(color_ratio)
+
+        st.markdown("**📋 Detalle de facturas de esa semana**")
+        det_fact = df_detalle[['Fecha Documento','Local','Subcategoria','Factura','Monto']].copy()
+        det_fact['Monto'] = det_fact['Monto'].apply(lambda x: f"$ {x:,.0f}")
+        det_fact['Fecha Documento'] = det_fact['Fecha Documento'].dt.strftime('%d/%m/%Y')
+        st.dataframe(det_fact.sort_values('Fecha Documento'),
+                    use_container_width=True, hide_index=True)
 
         # KPIs ratio
         r1, r2, r3, r4 = st.columns(4)
