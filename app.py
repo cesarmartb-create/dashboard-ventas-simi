@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+from pagina_compras import render_compras
 
 st.set_page_config(
     page_title="Dashboard de Ventas - Farmacias",
@@ -367,19 +368,16 @@ def generar_html_impresion(ticket_prom, pct_premio, arts_ticket,
 
 # ── SIDEBAR ──────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("## 💊 Farmacias\n*Panel de gestión*")
+    st.markdown("## 💊 Farmacias")
+    st.markdown("*Panel de gestión*")
     st.markdown("---")
-    st.markdown("**GENERAL**")
-    st.markdown("🏠 Dashboard")
-    st.markdown("📈 Ventas")
-    st.markdown("📦 Inventario")
-    st.markdown("👥 Clientes")
-    st.markdown("🏪 Farmacias")
-    st.markdown("---")
-    st.markdown("**ANÁLISIS**")
-    st.markdown("📊 Reportes")
-    st.markdown("⚡ Actividad")
-    st.markdown("🕐 Histórico")
+
+    pagina = st.radio(
+        "NAVEGACIÓN",
+        ["🏠 Dashboard", "📈 Ventas", "📦 Compras"],
+        index=1,
+        label_visibility="collapsed"
+    )
     st.markdown("---")
 
     archivo_personal = st.file_uploader(
@@ -482,6 +480,17 @@ with st.sidebar:
         st.caption(f"🟢 En vivo · {len(df_raw):,} registros")
 
 # ── MAIN ─────────────────────────────────────────────────
+# ── NAVEGACIÓN ───────────────────────────────────────────
+if pagina == "📦 Compras":
+    render_compras()
+    st.stop()
+
+if pagina == "🏠 Dashboard":
+    st.markdown("## 🏠 Dashboard General")
+    st.caption("Resumen ejecutivo · Grupo Baco · Dr. Simi")
+    st.info("👈 Selecciona **📈 Ventas** o **📦 Compras** para ver los dashboards detallados.")
+    st.stop()
+
 st.markdown("## 📊 Dashboard de Ventas")
 st.caption("General · Comercial · Datos reales · Grupo Baco · Dr. Simi")
 
