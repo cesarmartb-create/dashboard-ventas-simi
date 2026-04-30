@@ -56,7 +56,6 @@ def render_compras():
 
     # ── SIDEBAR COMPRAS ───────────────────────────────────
     with st.sidebar:
-        st.markdown("---")
         st.markdown("**📂 DATOS COMPRAS**")
 
         archivo_fact = st.file_uploader(
@@ -65,12 +64,22 @@ def render_compras():
             key="uploader_fact",
             help="Sube el archivo FACTURACION_SIMI.xlsx"
         )
+        # Guardar en session_state para no perder al navegar
+        if archivo_fact:
+            st.session_state["fact_file"] = archivo_fact
+        elif "fact_file" in st.session_state:
+            archivo_fact = st.session_state["fact_file"]
+
         archivo_vtas = st.file_uploader(
             "Ventas (.xlsx)",
             type=["xlsx"],
             key="uploader_vtas",
             help="Sube tu archivo de ventas QlickView para comparar"
         )
+        if archivo_vtas:
+            st.session_state["vtas_file"] = archivo_vtas
+        elif "vtas_file" in st.session_state:
+            archivo_vtas = st.session_state["vtas_file"]
 
     if not archivo_fact:
         st.info("👈 Carga el archivo de facturación desde el panel izquierdo para comenzar.")
