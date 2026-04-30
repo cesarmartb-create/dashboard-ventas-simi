@@ -164,17 +164,22 @@ def render_compras():
                       f"Semana {(x//7)+1}"
         )
 
-        resumen_vto = df_prox.groupby(['Semana vto.','Local']).agg(
-            Monto=('Monto','sum'),
-            Facturas=('Factura','count')
-        ).reset_index().sort_values('Monto', ascending=False)
-        resumen_vto['Monto Fmt'] = resumen_vto['Monto'].apply(lambda x: f"$ {x:,.0f}")
+        # Tabla pivoteada: filas=semana, columnas=empresa, total
+        pivot = df_prox.groupby(['Semana vto.','Empresa'])['Monto'].sum().reset_index()
+        pivot_tabla = pivot.pivot(index='Semana vto.', columns='Empresa', values='Monto').fillna(0)
+        pivot_tabla['💰 TOTAL'] = pivot_tabla.sum(axis=1)
 
-        st.dataframe(
-            resumen_vto[['Semana vto.','Local','Facturas','Monto Fmt']].rename(
-                columns={'Monto Fmt':'Monto'}),
-            use_container_width=True, hide_index=True
-        )
+        # Orden semanas
+        orden_sem = ['Esta semana','Semana 2','Semana 3','Semana 4','Semana 5','Semana 6','Semana 7']
+        pivot_tabla = pivot_tabla.reindex([s for s in orden_sem if s in pivot_tabla.index])
+
+        # Fila TOTAL
+        pivot_tabla.loc['📊 TOTAL GENERAL'] = pivot_tabla.sum()
+
+        # Formatear como $ 
+        pivot_fmt = pivot_tabla.applymap(lambda x: f"$ {x:,.0f}" if x > 0 else "—")
+
+        st.dataframe(pivot_fmt, use_container_width=True)
 
         fig_vto = px.bar(
             resumen_vto, x='Semana vto.', y='Monto', color='Local',
