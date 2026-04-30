@@ -158,13 +158,13 @@ def ranking_html(df_rank, col_nombre, col_valor, formato, color, titulo):
     html = f"""<div style='background:white;border-radius:12px;padding:16px;
                 box-shadow:0 1px 4px rgba(0,0,0,0.08);margin-bottom:8px'>
                <p style='font-weight:700;color:#1a2340;margin-bottom:12px;font-size:14px'>{titulo}</p>"""
-    for i, row in df_rank.iterrows():
+    for pos, (i, row) in enumerate(df_rank.iterrows(), start=1):
         pct = (row[col_valor] / max_val * 100) if max_val > 0 else 0
         valor_fmt = formato(row[col_valor])
         html += f"""
         <div style='margin-bottom:10px'>
             <div style='display:flex;justify-content:space-between;align-items:center'>
-                <span style='color:#374151;font-size:12px;font-weight:600'>#{i+1} {row[col_nombre]}</span>
+                <span style='color:#374151;font-size:12px;font-weight:600'>#{pos} {row[col_nombre]}</span>
                 <span style='color:#1a2340;font-size:13px;font-weight:700'>{valor_fmt}</span>
             </div>
             <div style='background:#e5e7eb;border-radius:4px;height:5px;width:100%;margin-top:4px'>
