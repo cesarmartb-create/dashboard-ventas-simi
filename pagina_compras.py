@@ -181,9 +181,18 @@ def render_compras():
 
         st.dataframe(pivot_fmt, use_container_width=True)
 
+        # Gráfico usando pivot sin formatear
+        pivot_grafico = pivot.copy()
+        orden_sem = ['Esta semana','Semana 2','Semana 3','Semana 4',
+                     'Semana 5','Semana 6','Semana 7']
+        pivot_grafico['Semana vto.'] = pd.Categorical(
+            pivot_grafico['Semana vto.'], categories=orden_sem, ordered=True
+        )
+        pivot_grafico = pivot_grafico.sort_values('Semana vto.')
+
         fig_vto = px.bar(
-            resumen_vto, x='Semana vto.', y='Monto', color='Local',
-            title='Vencimientos próximos 49 días por semana',
+            pivot_grafico, x='Semana vto.', y='Monto', color='Empresa',
+            title='Vencimientos próximos 49 días por semana y empresa',
             color_discrete_sequence=AZUL_LISTA
         )
         fig_vto = card_chart(fig_vto)
