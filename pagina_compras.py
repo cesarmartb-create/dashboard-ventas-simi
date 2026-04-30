@@ -23,16 +23,21 @@ def leer_facturacion(contenido):
 
 @st.cache_data
 def leer_ventas(nombre, contenido):
-    df = pd.read_excel(contenido, engine='openpyxl')
+    try:
+        df = pd.read_excel(contenido, engine='openpyxl')
+    except Exception:
+        return pd.DataFrame()
+    if 'Farmacia' not in df.columns:
+        return pd.DataFrame()
     df = df.dropna(subset=['Farmacia'])
+    if 'Importe Acumulado' not in df.columns:
+        return pd.DataFrame()
     df = df[df['Importe Acumulado'].apply(
         lambda x: str(x).replace('.','').replace('-','').strip().isdigit()
         if pd.notna(x) else False
     )]
     df['Importe Acumulado'] = pd.to_numeric(df['Importe Acumulado'], errors='coerce')
     df['Periodo'] = df['Periodo'].astype(str).str[:6]
-    df['Semana']  = pd.to_numeric(df.get('Semana Año', pd.Series(dtype=float)), errors='coerce')
-    # Calcular semana desde Dia si no existe columna Semana
     df['Dia']     = pd.to_numeric(df['Dia'], errors='coerce')
     df['Semana_calc'] = ((df['Dia'] - 1) // 7 + 1).clip(1, 5)
     df['Nombre Farmacia'] = df['Farmacia'].str.split('-').str[1:].str.join('-').str.strip()
@@ -201,17 +206,15 @@ def render_compras():
         pivot_grafico = pivot.copy()
         orden_sem = ['Esta semana','Semana 2','Semana 3','Semana 4',
                      'Semana 5','Semana 6','Semana 7']
-        # Gráfico por viernes de pago
-        pivot_grafico = df_prox.groupby(['Semana Pago','Empresa'])['Monto'].sum().reset_index()
-        pivot_grafico = pivot_grafico.merge(
-            df_prox[['Semana Pago','Fecha Pago']].drop_duplicates(),
-            on='Semana Pago'
-        ).sort_values('Fecha Pago')
+        # Gráfico por viernes de pago — ordenado por fecha real
+        pivot_grafico = df_prox.groupby(['Fecha Pago','Semana Pago','Empresa'])['Monto'].sum().reset_index()
+        pivot_grafico = pivot_grafico.sort_values('Fecha Pago')
 
         fig_vto = px.bar(
             pivot_grafico, x='Semana Pago', y='Monto', color='Empresa',
             title='Pagos por viernes — próximos 49 días',
-            color_discrete_sequence=AZUL_LISTA
+            color_discrete_sequence=AZUL_LISTA,
+            category_orders={'Semana Pago': pivot_grafico['Semana Pago'].tolist()}
         )
         fig_vto = card_chart(fig_vto)
         fig_vto.update_layout(xaxis_title='Viernes de pago', yaxis_title='$ Monto',
@@ -227,7 +230,12 @@ def render_compras():
     st.caption("Solo Mercadería · Solo Facturas · Sin Notas de Crédito")
 
     if archivo_vtas:
+        # Puede ser un archivo o una lista
+        if isinstance(archivo_vtas, list):
+            archivo_vtas = archivo_vtas[0]
         df_v = leer_ventas(archivo_vtas.name, archivo_vtas)
+        if df_v.empty:
+            archivo_vtas = None
 
         # Compras: solo Mercadería + solo Facturas
         df_merc = df[
