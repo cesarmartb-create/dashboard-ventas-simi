@@ -399,7 +399,7 @@ def render_compras():
 
         # Gráfico barras lado a lado
         ratio_melt = ratio_df.melt(
-            id_vars='Semana Label',
+            id_vars=['Semana Label','Ratio %'],
             value_vars=['Compras','Ventas'],
             var_name='Tipo', value_name='Monto'
         )
@@ -407,10 +407,27 @@ def render_compras():
             ratio_melt, x='Semana Label', y='Monto', color='Tipo',
             barmode='group',
             title='Compras vs Ventas por semana (Mercadería)',
-            color_discrete_map={'Compras': ROJO, 'Ventas': AZUL}
+            color_discrete_map={'Compras': ROJO, 'Ventas': AZUL},
+            text_auto='.2s'
         )
         fig_cv = card_chart(fig_cv)
         fig_cv.update_layout(xaxis_title='Semana', yaxis_title='$ Monto')
+        fig_cv.update_traces(textposition='outside')
+
+        # Agregar anotación de ratio % encima de cada par de barras
+        for _, row in ratio_df.iterrows():
+            color_ann = ROJO if row['Ratio %'] > 100 else NARANJA if row['Ratio %'] > 75 else VERDE
+            fig_cv.add_annotation(
+                x=row['Semana Label'],
+                y=max(row['Compras'], row['Ventas']) * 1.15,
+                text=f"<b>{row['Ratio %']:.1f}%</b>",
+                showarrow=False,
+                font=dict(size=13, color=color_ann),
+                bgcolor="white",
+                bordercolor=color_ann,
+                borderwidth=1,
+                borderpad=3
+            )
         st.plotly_chart(fig_cv, use_container_width=True)
 
     else:
