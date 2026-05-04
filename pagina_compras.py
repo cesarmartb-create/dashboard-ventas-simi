@@ -430,6 +430,91 @@ def render_compras():
             )
         st.plotly_chart(fig_cv, use_container_width=True)
 
+        # ── RATIO MENSUAL ─────────────────────────────────
+        st.markdown("#### 📅 Relación Compra / Venta mensual")
+
+        # Compras por mes
+        meses_num = {'enero':1,'febrero':2,'marzo':3,'abril':4,'mayo':5,'junio':6,
+                     'julio':7,'agosto':8,'septiembre':9,'octubre':10,'noviembre':11,'diciembre':12}
+        df_merc['Mes Num'] = df_merc['Mes'].map(meses_num)
+        compras_mes = df_merc.groupby(['Año','Mes','Mes Num'])['Monto'].sum().reset_index()
+        compras_mes.columns = ['Año','Mes','Mes Num','Compras']
+
+        # Ventas por mes
+        df_v['Mes_v_num'] = df_v['Mes_v'] if 'Mes_v' in df_v.columns else df_v['Fecha_v'].dt.month
+        ventas_mes = df_v.groupby(['Año_v','Mes_v'])['Importe Acumulado'].sum().reset_index()
+        ventas_mes.columns = ['Año','Mes Num','Ventas']
+
+        # Merge por año+mes
+        ratio_mes = compras_mes.merge(ventas_mes, on=['Año','Mes Num'], how='inner')
+        ratio_mes = ratio_mes[ratio_mes['Ventas'] > 0]
+        ratio_mes['Ratio %'] = (ratio_mes['Compras'] / ratio_mes['Ventas'] * 100).round(1)
+        ratio_mes['Mes Label'] = ratio_mes['Mes'].str.capitalize() + ' ' + ratio_mes['Año'].astype(str)
+        ratio_mes = ratio_mes.sort_values(['Año','Mes Num'])
+
+        # KPIs mensuales
+        rm1, rm2, rm3, rm4 = st.columns(4)
+        with rm1:
+            st.metric("📊 Ratio promedio mensual", f"{ratio_mes['Ratio %'].mean():.1f}%")
+        with rm2:
+            st.metric("🎯 Meta ideal", "60% – 75%")
+        with rm3:
+            meses_ok = len(ratio_mes[ratio_mes['Ratio %'].between(60,75)])
+            st.metric("✅ Meses en meta", f"{meses_ok} de {len(ratio_mes)}")
+        with rm4:
+            meses_riesgo = len(ratio_mes[ratio_mes['Ratio %'] > 100])
+            st.metric("🔴 Meses > 100%", f"{meses_riesgo}")
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # Gráfico ratio mensual
+        ratio_mes['Color'] = ratio_mes['Ratio %'].apply(
+            lambda r: ROJO if r > 100 else NARANJA if r > 75 else VERDE
+        )
+        fig_ratio_mes = px.bar(
+            ratio_mes, x='Mes Label', y='Ratio %',
+            title='Ratio Compra/Venta % por mes (Mercadería)',
+            color='Color',
+            color_discrete_map={VERDE:VERDE, NARANJA:NARANJA, ROJO:ROJO}
+        )
+        fig_ratio_mes = card_chart(fig_ratio_mes)
+        fig_ratio_mes.add_hline(y=60,  line_dash="dot", line_color=VERDE,  annotation_text="Meta mín 60%")
+        fig_ratio_mes.add_hline(y=75,  line_dash="dot", line_color=NARANJA, annotation_text="Meta máx 75%")
+        fig_ratio_mes.add_hline(y=100, line_dash="dot", line_color=ROJO,   annotation_text="Límite 100%")
+        fig_ratio_mes.update_layout(xaxis_title='', yaxis_title='Ratio %', showlegend=False)
+        st.plotly_chart(fig_ratio_mes, use_container_width=True)
+
+        # Gráfico barras compras vs ventas mensual
+        ratio_mes_melt = ratio_mes.melt(
+            id_vars=['Mes Label','Ratio %'],
+            value_vars=['Compras','Ventas'],
+            var_name='Tipo', value_name='Monto'
+        )
+        fig_cv_mes = px.bar(
+            ratio_mes_melt, x='Mes Label', y='Monto', color='Tipo',
+            barmode='group',
+            title='Compras vs Ventas por mes (Mercadería)',
+            color_discrete_map={'Compras': ROJO, 'Ventas': AZUL},
+            text_auto='.2s'
+        )
+        fig_cv_mes = card_chart(fig_cv_mes)
+        fig_cv_mes.update_traces(textposition='outside')
+        for _, row in ratio_mes.iterrows():
+            color_ann = ROJO if row['Ratio %'] > 100 else NARANJA if row['Ratio %'] > 75 else VERDE
+            fig_cv_mes.add_annotation(
+                x=row['Mes Label'],
+                y=max(row['Compras'], row['Ventas']) * 1.15,
+                text=f"<b>{row['Ratio %']:.1f}%</b>",
+                showarrow=False,
+                font=dict(size=13, color=color_ann),
+                bgcolor="white",
+                bordercolor=color_ann,
+                borderwidth=1,
+                borderpad=3
+            )
+        fig_cv_mes.update_layout(xaxis_title='', yaxis_title='$ Monto')
+        st.plotly_chart(fig_cv_mes, use_container_width=True)
+
     else:
         st.info("👈 Carga el archivo de ventas para ver la relación Compra/Venta.")
 
