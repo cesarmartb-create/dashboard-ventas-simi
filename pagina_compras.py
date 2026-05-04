@@ -76,9 +76,9 @@ def render_compras():
             archivo_fact = st.session_state["fact_file"]
 
         # Ventas se toman automáticamente desde la página de Ventas
-        archivo_vtas = st.session_state.get("vtas_file", None)
-        if archivo_vtas:
-            st.caption("✅ Ventas cargadas desde página Ventas")
+        archivos_vtas = st.session_state.get("vtas_files", None)
+        if archivos_vtas:
+            st.caption(f"✅ {len(archivos_vtas)} archivos de ventas cargados desde página Ventas")
         else:
             st.caption("⚠️ Carga primero los archivos en 📈 Ventas para ver ratio Compra/Venta")
 
@@ -229,13 +229,23 @@ def render_compras():
     st.markdown("### 📊 Relación Compra / Venta semanal")
     st.caption("Solo Mercadería · Solo Facturas · Sin Notas de Crédito")
 
-    if archivo_vtas:
-        # Puede ser un archivo o una lista
-        if isinstance(archivo_vtas, list):
-            archivo_vtas = archivo_vtas[0]
-        df_v = leer_ventas(archivo_vtas.name, archivo_vtas)
-        if df_v.empty:
+    archivos_vtas = st.session_state.get("vtas_files", None)
+    if archivos_vtas:
+        # Combinar todos los archivos de ventas
+        dfs_v = []
+        for av in archivos_vtas:
+            df_tmp = leer_ventas(av.name, av)
+            if not df_tmp.empty:
+                dfs_v.append(df_tmp)
+        if dfs_v:
+            df_v = pd.concat(dfs_v, ignore_index=True)
+            archivo_vtas = True
+        else:
             archivo_vtas = None
+            df_v = pd.DataFrame()
+    else:
+        archivo_vtas = None
+        df_v = pd.DataFrame()
 
         # Compras: solo Mercadería + solo Facturas
         df_merc = df[
@@ -255,7 +265,7 @@ def render_compras():
                 st.warning("⚠️ No se puede calcular semana desde el archivo de ventas.")
                 archivo_vtas = None
 
-        if archivo_vtas is not None:
+        if not df_v.empty:
             # Construir fecha completa desde Periodo + Dia
             df_v['Año_v']  = df_v['Periodo'].astype(str).str[:4].astype(int)
             df_v['Mes_v']  = df_v['Periodo'].astype(str).str[4:6].astype(int)
@@ -515,8 +525,8 @@ def render_compras():
         fig_cv_mes.update_layout(xaxis_title='', yaxis_title='$ Monto')
         st.plotly_chart(fig_cv_mes, use_container_width=True)
 
-    else:
-        st.info("👈 Carga el archivo de ventas para ver la relación Compra/Venta.")
+    if df_v.empty:
+        st.info("👈 Carga primero los archivos en 📈 Ventas para ver la relación Compra/Venta.")
 
     st.markdown("---")
 
