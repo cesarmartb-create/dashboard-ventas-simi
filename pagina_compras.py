@@ -239,9 +239,20 @@ def render_compras():
             (df['Tipo De Movimiento'] == 'Factura')
         ].copy()
 
-        # Agrupar compras por semana del año
-        compras_sem = df_merc.groupby('Semana')['Monto'].sum().reset_index()
-        compras_sem.columns = ['Semana','Compras']
+        # Notas de crédito Bonificacion 12.5 (descuento real)
+        df_nc_125 = df[
+            (df['Tipo De Movimiento'] == 'Nota de Crédito') &
+            (df['Subcategoria'] == 'Bonificacion 12.5')
+        ].copy()
+
+        # Restar NC 12.5 a las compras semanales
+        compras_sem_brutas = df_merc.groupby(['Año','Semana'])['Monto'].sum().reset_index()
+        nc_125_sem         = df_nc_125.groupby(['Año','Semana'])['Monto'].sum().reset_index()
+        nc_125_sem.columns = ['Año','Semana','NC_125']
+
+        compras_sem_full = compras_sem_brutas.merge(nc_125_sem, on=['Año','Semana'], how='left').fillna(0)
+        compras_sem_full['Compras'] = compras_sem_full['Monto'] - compras_sem_full['NC_125']
+        compras_sem = compras_sem_full[['Semana','Compras']].copy()
 
         # Ventas: calcular semana si no existe
         if 'Semana_calc' not in df_v.columns:
@@ -266,9 +277,8 @@ def render_compras():
             ventas_sem = df_v.groupby(['Año_sem','Semana_año'])['Importe Acumulado'].sum().reset_index()
             ventas_sem.columns = ['Año','Semana','Ventas']
 
-            # Compras también por año+semana
-            compras_sem2 = df_merc.groupby(['Año','Semana'])['Monto'].sum().reset_index()
-            compras_sem2.columns = ['Año','Semana','Compras']
+            # Compras también por año+semana (descontando NC 12.5)
+            compras_sem2 = compras_sem_full[['Año','Semana','Compras']].copy()
 
             # Merge por año+semana
             ratio_df = compras_sem2.merge(ventas_sem, on=['Año','Semana'], how='inner')
@@ -429,12 +439,19 @@ def render_compras():
         # ── RATIO MENSUAL ─────────────────────────────────
         st.markdown("#### 📅 Relación Compra / Venta mensual")
 
-        # Compras por mes
+        # Compras por mes (descontando NC 12.5)
         meses_num = {'enero':1,'febrero':2,'marzo':3,'abril':4,'mayo':5,'junio':6,
                      'julio':7,'agosto':8,'septiembre':9,'octubre':10,'noviembre':11,'diciembre':12}
         df_merc['Mes Num'] = df_merc['Mes'].map(meses_num)
-        compras_mes = df_merc.groupby(['Año','Mes','Mes Num'])['Monto'].sum().reset_index()
-        compras_mes.columns = ['Año','Mes','Mes Num','Compras']
+        df_nc_125['Mes Num'] = df_nc_125['Mes'].map(meses_num)
+
+        compras_mes_brutas = df_merc.groupby(['Año','Mes','Mes Num'])['Monto'].sum().reset_index()
+        nc_125_mes = df_nc_125.groupby(['Año','Mes Num'])['Monto'].sum().reset_index()
+        nc_125_mes.columns = ['Año','Mes Num','NC_125']
+
+        compras_mes_full = compras_mes_brutas.merge(nc_125_mes, on=['Año','Mes Num'], how='left').fillna(0)
+        compras_mes_full['Compras'] = compras_mes_full['Monto'] - compras_mes_full['NC_125']
+        compras_mes = compras_mes_full[['Año','Mes','Mes Num','Compras']].copy()
 
         # Ventas por mes
         df_v['Mes_v_num'] = df_v['Mes_v'] if 'Mes_v' in df_v.columns else df_v['Fecha_v'].dt.month
