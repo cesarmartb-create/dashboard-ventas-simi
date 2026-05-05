@@ -251,7 +251,8 @@ def render_compras():
         nc_125_sem.columns = ['Año','Semana','NC_125']
 
         compras_sem_full = compras_sem_brutas.merge(nc_125_sem, on=['Año','Semana'], how='left').fillna(0)
-        compras_sem_full['Compras'] = compras_sem_full['Monto'] - compras_sem_full['NC_125']
+        # NC tienen Monto negativo → SUMAR para descontar correctamente
+        compras_sem_full['Compras'] = compras_sem_full['Monto'] + compras_sem_full['NC_125']
         compras_sem = compras_sem_full[['Semana','Compras']].copy()
 
         # Ventas: calcular semana si no existe
@@ -450,7 +451,8 @@ def render_compras():
         nc_125_mes.columns = ['Año','Mes Num','NC_125']
 
         compras_mes_full = compras_mes_brutas.merge(nc_125_mes, on=['Año','Mes Num'], how='left').fillna(0)
-        compras_mes_full['Compras'] = compras_mes_full['Monto'] - compras_mes_full['NC_125']
+        # NC tienen Monto negativo → SUMAR para descontar correctamente
+        compras_mes_full['Compras'] = compras_mes_full['Monto'] + compras_mes_full['NC_125']
         compras_mes = compras_mes_full[['Año','Mes','Mes Num','Compras']].copy()
 
         # Ventas por mes
