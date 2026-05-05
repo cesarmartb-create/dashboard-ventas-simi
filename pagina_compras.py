@@ -227,7 +227,7 @@ def render_compras():
 
     # ── RATIO COMPRA / VENTA ──────────────────────────────
     st.markdown("### 📊 Relación Compra / Venta semanal")
-    st.caption("Solo Mercadería · Facturas - Notas de Crédito Bonificación 12.5%")
+    st.caption("Solo Mercadería · Facturas menos NC reales (Bonif. 12.5%, Desc. Banco Estado, Dev. Mal Estado, No Surtida, Caducidad, 3x2)")
 
     # Tomar datos de ventas procesados desde session_state
     df_v = st.session_state.get("vtas_df", pd.DataFrame())
@@ -239,10 +239,18 @@ def render_compras():
             (df['Tipo De Movimiento'] == 'Factura')
         ].copy()
 
-        # Notas de crédito Bonificacion 12.5 (descuento real)
+        # Notas de crédito reales (descuentos efectivos a aplicar)
+        SUBCAT_NC_DESCUENTO = [
+            'Bonificacion 12.5',
+            'Bonificacion Descuento Banco Estado',
+            'Dev Mal Estado',
+            'Dev No Surtida',
+            'Dev x Caducidad',
+            'Devolucion 3x2',
+        ]
         df_nc_125 = df[
             (df['Tipo De Movimiento'] == 'Nota de Crédito') &
-            (df['Subcategoria'] == 'Bonificacion 12.5')
+            (df['Subcategoria'].isin(SUBCAT_NC_DESCUENTO))
         ].copy()
 
         # Restar NC 12.5 a las compras semanales
