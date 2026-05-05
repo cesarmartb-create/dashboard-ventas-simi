@@ -41,8 +41,13 @@ st.markdown("""
     }
     section[data-testid="stSidebar"] .stSelectbox label,
     section[data-testid="stSidebar"] .stMultiSelect label,
-    section[data-testid="stSidebar"] .stFileUploader label {
-        color: #a0aec0 !important;
+    section[data-testid="stSidebar"] .stFileUploader label,
+    section[data-testid="stSidebar"] .stFileUploader p,
+    section[data-testid="stSidebar"] .stFileUploader span,
+    section[data-testid="stSidebar"] .stNumberInput label,
+    section[data-testid="stSidebar"] .stRadio label,
+    section[data-testid="stSidebar"] .stToggle label {
+        color: white !important;
         font-size: 11px !important;
         text-transform: uppercase;
         letter-spacing: 1px;
