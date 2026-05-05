@@ -397,12 +397,13 @@ def render_compras():
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # Gráfico ratio
+        # Gráfico ratio (orden cronológico forzado)
         fig_ratio = px.bar(
             ratio_df, x='Semana Label', y='Ratio %',
             title='Ratio Compra/Venta % por semana (Mercadería)',
             color='Color',
-            color_discrete_map={VERDE:VERDE, NARANJA:NARANJA, ROJO:ROJO, AZUL:AZUL}
+            color_discrete_map={VERDE:VERDE, NARANJA:NARANJA, ROJO:ROJO, AZUL:AZUL},
+            category_orders={'Semana Label': ratio_df['Semana Label'].tolist()}
         )
         fig_ratio = card_chart(fig_ratio)
         fig_ratio.add_hline(y=63, line_dash="dot", line_color=VERDE,   annotation_text="Meta mín 63%")
