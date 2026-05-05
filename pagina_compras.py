@@ -409,7 +409,22 @@ def render_compras():
         fig_ratio.add_hline(y=63, line_dash="dot", line_color=VERDE,   annotation_text="Meta mín 63%")
         fig_ratio.add_hline(y=65, line_dash="solid", line_color="#1a2340", annotation_text="Meta 65%")
         fig_ratio.add_hline(y=67, line_dash="dot", line_color=NARANJA, annotation_text="Meta máx 67%")
-        fig_ratio.update_layout(xaxis_title='Semana', yaxis_title='Ratio %', showlegend=False)
+
+        # Agregar línea de promedio móvil 2 semanas
+        ratio_df_sorted = ratio_df.sort_values('Fecha Semana').reset_index(drop=True)
+        ratio_df_sorted['Movil2'] = ratio_df_sorted['Ratio %'].rolling(window=2, min_periods=1).mean().round(1)
+        fig_ratio.add_scatter(
+            x=ratio_df_sorted['Semana Label'],
+            y=ratio_df_sorted['Movil2'],
+            mode='lines+markers',
+            name='Promedio móvil 2 sem',
+            line=dict(color='#1a2340', width=3, dash='solid'),
+            marker=dict(size=8, color='#1a2340'),
+            hovertemplate='<b>%{x}</b><br>Móvil 2 sem: %{y}%<extra></extra>'
+        )
+        fig_ratio.update_layout(xaxis_title='Semana', yaxis_title='Ratio %',
+                                showlegend=True,
+                                legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1))
         st.plotly_chart(fig_ratio, use_container_width=True)
 
         # Gráfico barras lado a lado
