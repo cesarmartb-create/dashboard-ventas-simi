@@ -39,21 +39,30 @@ st.markdown("""
     section[data-testid="stSidebar"] [data-testid="stFileUploader"] [class*="fileSize"] {
         color: #1a2340 !important;
     }
+    /* Labels sobre fondo oscuro = BLANCO */
+    section[data-testid="stSidebar"] label,
     section[data-testid="stSidebar"] .stSelectbox label,
     section[data-testid="stSidebar"] .stMultiSelect label,
-    section[data-testid="stSidebar"] .stFileUploader label,
     section[data-testid="stSidebar"] .stNumberInput label,
     section[data-testid="stSidebar"] .stRadio label,
-    section[data-testid="stSidebar"] .stToggle label {
+    section[data-testid="stSidebar"] .stToggle label,
+    section[data-testid="stSidebar"] [data-testid="stFileUploader"] > label,
+    section[data-testid="stSidebar"] [data-testid="stFileUploader"] > label * {
         color: white !important;
         font-size: 11px !important;
         text-transform: uppercase;
         letter-spacing: 1px;
     }
 
-    /* Texto oscuro DENTRO de los recuadros de carga */
-    section[data-testid="stSidebar"] [data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] *,
-    section[data-testid="stSidebar"] [data-testid="stFileUploader"] [class*="uploadedFile"] * {
+    /* Texto DENTRO de recuadros blancos = OSCURO */
+    section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"],
+    section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] *,
+    section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] span,
+    section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] small,
+    section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] button,
+    section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] p,
+    section[data-testid="stSidebar"] [class*="uploadedFile"],
+    section[data-testid="stSidebar"] [class*="uploadedFile"] * {
         color: #1a2340 !important;
     }
     [data-testid="stMetricValue"] {
