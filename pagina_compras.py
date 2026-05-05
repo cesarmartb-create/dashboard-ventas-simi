@@ -360,10 +360,9 @@ def render_compras():
 
         # Tabla detalle completo
             def color_ratio(r):
-                if r > 100: return ROJO
-                if r > 75:  return NARANJA
-                if r >= 60: return VERDE
-                return AZUL
+                if r > 67: return ROJO
+                if r < 63: return NARANJA
+                return VERDE
 
             ratio_df['Color'] = ratio_df['Ratio %'].apply(color_ratio)
 
@@ -380,13 +379,13 @@ def render_compras():
         with r1:
             st.metric("📊 Ratio promedio",  f"{ratio_prom:.1f}%")
         with r2:
-            st.metric("🎯 Meta ideal",      "60% – 75%")
+            st.metric("🎯 Meta",            "65% ±2%")
         with r3:
-            semanas_ok = len(ratio_df[ratio_df['Ratio %'].between(60,75)])
+            semanas_ok = len(ratio_df[ratio_df['Ratio %'].between(63,67)])
             st.metric("✅ Semanas en meta", f"{semanas_ok} de {len(ratio_df)}")
         with r4:
-            semanas_riesgo = len(ratio_df[ratio_df['Ratio %'] > 100])
-            st.metric("🔴 Semanas > 100%", f"{semanas_riesgo}")
+            semanas_alto = len(ratio_df[ratio_df['Ratio %'] > 67])
+            st.metric("🔴 Semanas > 67%",   f"{semanas_alto}")
 
         st.markdown("<br>", unsafe_allow_html=True)
 
@@ -398,9 +397,9 @@ def render_compras():
             color_discrete_map={VERDE:VERDE, NARANJA:NARANJA, ROJO:ROJO, AZUL:AZUL}
         )
         fig_ratio = card_chart(fig_ratio)
-        fig_ratio.add_hline(y=60,  line_dash="dot", line_color=VERDE,  annotation_text="Meta mín 60%")
-        fig_ratio.add_hline(y=75,  line_dash="dot", line_color=NARANJA, annotation_text="Meta máx 75%")
-        fig_ratio.add_hline(y=100, line_dash="dot", line_color=ROJO,   annotation_text="Límite 100%")
+        fig_ratio.add_hline(y=63, line_dash="dot", line_color=VERDE,   annotation_text="Meta mín 63%")
+        fig_ratio.add_hline(y=65, line_dash="solid", line_color="#1a2340", annotation_text="Meta 65%")
+        fig_ratio.add_hline(y=67, line_dash="dot", line_color=NARANJA, annotation_text="Meta máx 67%")
         fig_ratio.update_layout(xaxis_title='Semana', yaxis_title='Ratio %', showlegend=False)
         st.plotly_chart(fig_ratio, use_container_width=True)
 
@@ -423,7 +422,7 @@ def render_compras():
 
         # Agregar anotación de ratio % encima de cada par de barras
         for _, row in ratio_df.iterrows():
-            color_ann = ROJO if row['Ratio %'] > 100 else NARANJA if row['Ratio %'] > 75 else VERDE
+            color_ann = ROJO if row['Ratio %'] > 67 else NARANJA if row['Ratio %'] < 63 else VERDE
             fig_cv.add_annotation(
                 x=row['Semana Label'],
                 y=max(row['Compras'], row['Ventas']) * 1.15,
@@ -472,32 +471,15 @@ def render_compras():
         with rm1:
             st.metric("📊 Ratio promedio mensual", f"{ratio_mes['Ratio %'].mean():.1f}%")
         with rm2:
-            st.metric("🎯 Meta ideal", "60% – 75%")
+            st.metric("🎯 Meta",          "65% ±2%")
         with rm3:
-            meses_ok = len(ratio_mes[ratio_mes['Ratio %'].between(60,75)])
+            meses_ok = len(ratio_mes[ratio_mes['Ratio %'].between(63,67)])
             st.metric("✅ Meses en meta", f"{meses_ok} de {len(ratio_mes)}")
         with rm4:
-            meses_riesgo = len(ratio_mes[ratio_mes['Ratio %'] > 100])
-            st.metric("🔴 Meses > 100%", f"{meses_riesgo}")
+            meses_alto = len(ratio_mes[ratio_mes['Ratio %'] > 67])
+            st.metric("🔴 Meses > 67%",   f"{meses_alto}")
 
         st.markdown("<br>", unsafe_allow_html=True)
-
-        # Gráfico ratio mensual
-        ratio_mes['Color'] = ratio_mes['Ratio %'].apply(
-            lambda r: ROJO if r > 100 else NARANJA if r > 75 else VERDE
-        )
-        fig_ratio_mes = px.bar(
-            ratio_mes, x='Mes Label', y='Ratio %',
-            title='Ratio Compra/Venta % por mes (Mercadería)',
-            color='Color',
-            color_discrete_map={VERDE:VERDE, NARANJA:NARANJA, ROJO:ROJO}
-        )
-        fig_ratio_mes = card_chart(fig_ratio_mes)
-        fig_ratio_mes.add_hline(y=60,  line_dash="dot", line_color=VERDE,  annotation_text="Meta mín 60%")
-        fig_ratio_mes.add_hline(y=75,  line_dash="dot", line_color=NARANJA, annotation_text="Meta máx 75%")
-        fig_ratio_mes.add_hline(y=100, line_dash="dot", line_color=ROJO,   annotation_text="Límite 100%")
-        fig_ratio_mes.update_layout(xaxis_title='', yaxis_title='Ratio %', showlegend=False)
-        st.plotly_chart(fig_ratio_mes, use_container_width=True)
 
         # Gráfico barras compras vs ventas mensual
         ratio_mes_melt = ratio_mes.melt(
@@ -515,7 +497,7 @@ def render_compras():
         fig_cv_mes = card_chart(fig_cv_mes)
         fig_cv_mes.update_traces(textposition='outside')
         for _, row in ratio_mes.iterrows():
-            color_ann = ROJO if row['Ratio %'] > 100 else NARANJA if row['Ratio %'] > 75 else VERDE
+            color_ann = ROJO if row['Ratio %'] > 67 else NARANJA if row['Ratio %'] < 63 else VERDE
             fig_cv_mes.add_annotation(
                 x=row['Mes Label'],
                 y=max(row['Compras'], row['Ventas']) * 1.15,
