@@ -42,8 +42,6 @@ st.markdown("""
     section[data-testid="stSidebar"] .stSelectbox label,
     section[data-testid="stSidebar"] .stMultiSelect label,
     section[data-testid="stSidebar"] .stFileUploader label,
-    section[data-testid="stSidebar"] .stFileUploader p,
-    section[data-testid="stSidebar"] .stFileUploader span,
     section[data-testid="stSidebar"] .stNumberInput label,
     section[data-testid="stSidebar"] .stRadio label,
     section[data-testid="stSidebar"] .stToggle label {
@@ -51,6 +49,12 @@ st.markdown("""
         font-size: 11px !important;
         text-transform: uppercase;
         letter-spacing: 1px;
+    }
+
+    /* Texto oscuro DENTRO de los recuadros de carga */
+    section[data-testid="stSidebar"] [data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] *,
+    section[data-testid="stSidebar"] [data-testid="stFileUploader"] [class*="uploadedFile"] * {
+        color: #1a2340 !important;
     }
     [data-testid="stMetricValue"] {
         font-size: 1.8rem !important;
