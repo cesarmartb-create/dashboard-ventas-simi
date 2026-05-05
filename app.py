@@ -423,6 +423,8 @@ with st.sidebar:
         st.session_state["vtas_files"] = archivos
         with st.spinner("Procesando..."):
             df_raw = combinar_sin_duplicados(archivos)
+        # Guardar datos procesados para Compras
+        st.session_state["vtas_df"] = df_raw.copy()
 
         df_raw['Nombre Vendedor'] = df_raw['Vendedor'].apply(
             lambda x: resolver_nombre(x, mapping_nombres)
