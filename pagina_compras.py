@@ -227,7 +227,7 @@ def render_compras():
 
     # ── RATIO COMPRA / VENTA ──────────────────────────────
     st.markdown("### 📊 Relación Compra / Venta semanal")
-    st.caption("Solo Mercadería · Solo Facturas · Sin Notas de Crédito")
+    st.caption("Solo Mercadería · Facturas - Notas de Crédito Bonificación 12.5%")
 
     # Tomar datos de ventas procesados desde session_state
     df_v = st.session_state.get("vtas_df", pd.DataFrame())
