@@ -229,24 +229,10 @@ def render_compras():
     st.markdown("### 📊 Relación Compra / Venta semanal")
     st.caption("Solo Mercadería · Solo Facturas · Sin Notas de Crédito")
 
-    archivos_vtas = st.session_state.get("vtas_files", None)
-    if archivos_vtas:
-        # Combinar todos los archivos de ventas
-        dfs_v = []
-        for av in archivos_vtas:
-            df_tmp = leer_ventas(av.name, av)
-            if not df_tmp.empty:
-                dfs_v.append(df_tmp)
-        if dfs_v:
-            df_v = pd.concat(dfs_v, ignore_index=True)
-            archivo_vtas = True
-        else:
-            archivo_vtas = None
-            df_v = pd.DataFrame()
-    else:
-        archivo_vtas = None
-        df_v = pd.DataFrame()
+    # Tomar datos de ventas procesados desde session_state
+    df_v = st.session_state.get("vtas_df", pd.DataFrame())
 
+    if not df_v.empty:
         # Compras: solo Mercadería + solo Facturas
         df_merc = df[
             (df['Categoría'] == 'Mercadería') &
